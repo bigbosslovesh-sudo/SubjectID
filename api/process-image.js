@@ -20,7 +20,7 @@ function errorLog(...args) {
 // 初始化 302.ai API 配置
 const API_KEY = process.env.API_KEY;
 const API_URL = process.env.API_URL || 'https://api.302ai.cn/v1/chat/completions';
-const MODEL_NAME = process.env.MODEL_NAME || 'gemini-2.5-flash';
+const MODEL_NAME = process.env.MODEL_NAME || 'gemini-2.5-flash-image-preview';
 
 // Vercel serverless function handler
 export default async function handler(req, res) {
@@ -80,7 +80,7 @@ async function handleImageProcess(req, res) {
       }
 
       // 处理上传的图片
-      const processedImageData = await processImageWithAI(imageFile[0] || imageFile);
+      const processedImageData = await generateProductImage(imageFile[0] || imageFile);
 
       // 返回base64编码的图片数据而不是文件路径
       res.status(200).json({
@@ -98,19 +98,85 @@ async function handleImageProcess(req, res) {
   });
 }
 
-// 使用 Gemini AI 处理图片
-async function processImageWithAI(imageFile) {
+// 文件名清理和安全检查函数
+function sanitizeFileName(fileName) {
+  // 移除或替换非法字符
+  let safeName = fileName
+    .replace(/[<>:"/\\|?*]/g, '_') // 替换非法字符为下划线
+    .replace(/\s+/g, '_') // 替换空格为下划线
+    .replace(/[^\w\u4e00-\u9fa5._-]/g, '_') // 只保留字母、数字、中文、点、下划线、短划线
+    .replace(/_{2,}/g, '_') // 多个连续下划线替换为单个
+    .replace(/^_+|_+$/g, ''); // 移除开头和结尾的下划线
+
+  // 确保文件名不为空
+  if (!safeName) {
+    safeName = 'image';
+  }
+
+  // 限制文件名长度
+  if (safeName.length > 100) {
+    safeName = safeName.substring(0, 100);
+  }
+
+  return safeName;
+}
+
+// 下载远程图片并保存到临时目录
+async function downloadImage(imageUrl, outputBuffer = false) {
+  try {
+    debugLog('开始下载图片:', imageUrl);
+
+    // 下载图片
+    const response = await axios.get(imageUrl, {
+      responseType: 'arraybuffer',
+      timeout: 25000, // 25秒超时适配Vercel
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+
+    if (response.status !== 200) {
+      throw new Error(`下载失败，状态码: ${response.status}`);
+    }
+
+    // 将下载的数据转换为Buffer
+    const imageBuffer = Buffer.from(response.data);
+
+    // 使用sharp处理图片
+    const processedBuffer = await sharp(imageBuffer)
+      .png({ quality: 95 })
+      .toBuffer();
+
+    debugLog('图片下载并处理成功');
+    return processedBuffer;
+
+  } catch (error) {
+    console.error('图片下载失败:', error.message);
+    throw error;
+  }
+}
+
+// AI生成专业产品照函数 - Vercel版本
+async function generateProductImage(imageFile) {
+  // 添加timestamp用于临时文件命名
+  const timestamp = Date.now();
+
+  // 获取原文件名（不含扩展名）
+  const originalFileName = path.basename(imageFile.originalFilename || imageFile.name || 'image', path.extname(imageFile.originalFilename || imageFile.name || 'image.png'));
+  const safeFileName = sanitizeFileName(originalFileName);
+  const processedFilename = `Processed_${safeFileName}.png`;
+
   try {
     if (!API_KEY || API_KEY === 'your_api_key_here') {
       throw new Error('API Key 未配置，请检查您的API密钥配置');
     }
 
-    debugLog('使用 302.ai API 分析图片...');
+    debugLog('使用AI生成专业产品照...');
 
     // 压缩图片以减少payload大小 - 适配Vercel限制
     const compressedImageBuffer = await sharp(imageFile.filepath)
-      .resize(600, 450, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 50 })
+      .resize(1000, 750, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 60 })
       .toBuffer();
 
     const imageBase64 = compressedImageBuffer.toString('base64');
@@ -118,102 +184,142 @@ async function processImageWithAI(imageFile) {
 
     debugLog(`压缩后图片大小: ${Math.round(compressedImageBuffer.length / 1024)}KB`);
 
-    const prompt = `Return ONLY valid JSON, no explanations:
-{
-  "product_detected": true,
-  "main_subject": {
-    "tight_bbox": {"x": 0.3, "y": 0.2, "width": 0.4, "height": 0.6},
-    "subject_type": "商品名称",
-    "subject_type_en": "product_name",
-    "filename_safe": "product-file-name",
-    "dominant_colors": ["#color1", "#color2"]
-  }
-}`;
+    const combinedPrompt = `请生成一张专业的商品产品照，要求如下：
 
-    // 重试逻辑
-    let analysis = null;
-    let retryCount = 0;
-    const maxRetries = 2; // 减少重试次数适配Vercel超时
+核心任务：从商品页面截图中提取纯净的商品本体，生成专业产品照
 
-    while (retryCount < maxRetries && !analysis) {
-      try {
-        debugLog(`API调用尝试 ${retryCount + 1}/${maxRetries}...`);
+具体处理步骤：
+1. 精准识别商品的完整边界
+   - 确保商品主体不被截断
+   - 保持商品的完整轮廓和形状
 
-        // 使用 302.ai API 进行分析
-        const apiResponse = await axios.post(API_URL, {
-          model: MODEL_NAME,
-          messages: [
+2. 智能移除所有干扰元素：
+   - 价格标签、促销文字、商品描述文本
+   - 促销贴纸、标签、徽章
+   - 包装上的非商品本身图案
+   - 遮挡物（手指、展示工具等）
+   - 网页界面元素、按钮
+
+3. 完整保留商品固有特征：
+   - 商品本身的logo和品牌标识
+   - 原有的材质纹理、颜色、光泽
+   - 商品的造型和设计细节
+   - 自然的阴影和立体感
+
+4. 生成专业产品照效果：
+   - 纯白色背景（#FFFFFF）
+   - 均匀的专业级打光
+   - 清晰锐利的图像质量
+   - 商品居中展示
+
+输出要求：
+- 直接返回处理完成的图片
+- 图片格式：PNG，高质量
+- 背景：纯白色，无杂质
+- 效果：如同专业摄影棚拍摄的产品照
+
+请直接生成符合以上要求的商品产品照，不要返回任何文字说明。`;
+
+    // 调用 AI 进行图片生成
+    const apiResponse = await axios.post(API_URL, {
+      model: MODEL_NAME,
+      messages: [
+        {
+          role: "system",
+          content: "你是专业的商品图像处理AI，具备图片生成能力。你的任务是从商品页面截图中提取纯净的商品本体，生成高质量的专业产品照。请直接生成处理后的图片，确保背景纯白、商品居中、质量清晰。"
+        },
+        {
+          role: "user",
+          content: [
             {
-              role: "system",
-              content: "You are a JSON response bot. Return only valid JSON, no explanations, no reasoning, no markdown. Analyze the product image and return the JSON structure requested."
+              type: "text",
+              text: combinedPrompt
             },
             {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: prompt
-                },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: `data:${mimeType};base64,${imageBase64}`
-                  }
-                }
-              ]
+              type: "image_url",
+              image_url: {
+                url: `data:${mimeType};base64,${imageBase64}`
+              }
             }
-          ],
-          temperature: 0
-        }, {
-          headers: {
-            'Authorization': `Bearer ${API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: 25000 // 减少到25秒适配Vercel
-        });
-
-        debugLog('API响应状态:', apiResponse.status);
-
-        const analysisText = apiResponse.data.choices?.[0]?.message?.content || '';
-        debugLog('AI 分析结果:', analysisText);
-
-        // 尝试解析 AI 返回的 JSON
-        try {
-          analysis = parseAIResponse(analysisText);
-          if (analysis && analysis.main_subject) {
-            debugLog('AI 分析成功解析');
-          } else {
-            console.warn('AI 返回的分析结果格式不正确');
-          }
-        } catch (parseError) {
-          console.warn('Failed to parse AI response as JSON:', parseError.message);
+          ]
         }
+      ],
+      temperature: 0
+    }, {
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 55000 // 55秒超时适配Vercel
+    });
 
-        break; // 成功则跳出循环
+    debugLog('AI响应状态:', apiResponse.status);
 
-      } catch (apiError) {
-        retryCount++;
-        errorLog(`API调用失败 (尝试 ${retryCount}/${maxRetries}):`, apiError.message);
+    // 检查 AI 是否返回了处理后的图片
+    const response = apiResponse.data.choices?.[0]?.message?.content || '';
 
-        if (retryCount < maxRetries) {
-          debugLog(`等待 ${retryCount} 秒后重试...`);
-          await new Promise(resolve => setTimeout(resolve, retryCount * 1000));
+    // 方式1: 检查是否返回了base64图片数据
+    if (response.includes('data:image/') || response.includes('base64,')) {
+      debugLog('AI返回了base64图片数据，正在处理...');
+
+      // 提取base64图片数据
+      let base64Data = '';
+      if (response.includes('data:image/')) {
+        const match = response.match(/data:image\/[^;]+;base64,([^"')\s]+)/);
+        if (match) {
+          base64Data = match[1];
         }
+      } else if (response.includes('base64,')) {
+        const match = response.match(/base64,([^"')\s]+)/);
+        if (match) {
+          base64Data = match[1];
+        }
+      }
+
+      if (base64Data) {
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        const processedBuffer = await sharp(imageBuffer)
+          .png({ quality: 95 })
+          .toBuffer();
+        return processedBuffer.toString('base64');
       }
     }
 
-    // 如果有分析结果，进行精确的商品主体提取
-    if (analysis && analysis.main_subject) {
-      const processedImageBuffer = await extractProductSubject(imageFile.filepath, analysis);
-      return processedImageBuffer.toString('base64');
-    } else {
-      errorLog('AI分析失败，返回错误信息');
-      throw new Error('AI调用失败，请检查网络连接或稍后重试');
+    // 方式2: 检查是否返回了图片URL链接 (Markdown格式)
+    const urlMatch = response.match(/!\[.*?\]\((https?:\/\/[^\)]+\.(png|jpg|jpeg|gif|webp))\)/i);
+    if (urlMatch) {
+      const imageUrl = urlMatch[1];
+      debugLog('AI返回了图片URL，正在下载:', imageUrl);
+      const downloadedBuffer = await downloadImage(imageUrl);
+      return downloadedBuffer.toString('base64');
     }
 
+    // 方式3: 检查纯URL格式 (无Markdown)
+    const directUrlMatch = response.match(/(https?:\/\/[^\s]+\.(png|jpg|jpeg|gif|webp))/i);
+    if (directUrlMatch) {
+      const imageUrl = directUrlMatch[1];
+      debugLog('AI返回了直接图片URL，正在下载:', imageUrl);
+      const downloadedBuffer = await downloadImage(imageUrl);
+      return downloadedBuffer.toString('base64');
+    }
+
+    // 如果所有方式都失败，抛出详细错误
+    debugLog('AI响应内容 (前200字符):', response.substring(0, 200));
+    throw new Error(`AI响应格式不支持。响应内容: ${response.substring(0, 100)}...`);
+
   } catch (error) {
-    errorLog('AI processing failed:', error);
-    throw error;
+    console.error('AI生成处理失败:', error.message);
+
+    // 根据错误类型返回具体的错误信息
+    if (error.code === 'ECONNRESET' || error.code === 'ECONNABORTED') {
+      throw new Error('AI处理超时，请检查网络连接或稍后重试');
+    } else if (error.response && error.response.status === 401) {
+      throw new Error('API认证失败，请检查API密钥配置');
+    } else if (error.response && error.response.status === 429) {
+      throw new Error('API调用频率超限，请稍后重试');
+    } else {
+      throw new Error(`AI生成处理失败: ${error.message}`);
+    }
   }
 }
 

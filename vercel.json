@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/process-image.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     },
     "api/package-results.js": {
       "maxDuration": 20
