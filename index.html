@@ -350,6 +350,30 @@
             text-overflow: ellipsis;
         }
 
+        .made-by {
+            position: fixed;
+            bottom: 1vw;
+            right: 1vw;
+            background: rgba(0, 0, 0, 0.4);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.8rem;
+            font-size: max(0.55rem, min(0.7rem, 2vw));
+            font-weight: 400;
+            z-index: 999;
+            backdrop-filter: blur(5px);
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            max-width: calc(100vw - 2vw);
+            text-overflow: ellipsis;
+            opacity: 0.6;
+        }
+
+        .made-by:hover {
+            opacity: 0.9;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -371,6 +395,14 @@
                 padding: 0.4rem 0.8rem;
                 border-radius: 1rem;
             }
+
+            .made-by {
+                bottom: 0.8rem;
+                right: 0.8rem;
+                font-size: max(0.5rem, min(0.65rem, 2.5vw));
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.6rem;
+            }
         }
 
         @media (max-width: 480px) {
@@ -380,6 +412,15 @@
                 font-size: max(0.5rem, min(0.65rem, 3.5vw));
                 padding: 0.3rem 0.6rem;
                 border-radius: 0.8rem;
+                max-width: calc(100vw - 1rem);
+            }
+
+            .made-by {
+                bottom: 0.5rem;
+                right: 0.5rem;
+                font-size: max(0.45rem, min(0.6rem, 3vw));
+                padding: 0.2rem 0.4rem;
+                border-radius: 0.5rem;
                 max-width: calc(100vw - 1rem);
             }
         }
@@ -393,11 +434,21 @@
                 left: 0.3rem;
                 max-width: calc(100vw - 0.6rem);
             }
+
+            .made-by {
+                font-size: 0.4rem;
+                padding: 0.15rem 0.3rem;
+                border-radius: 0.4rem;
+                bottom: 0.3rem;
+                right: 0.3rem;
+                max-width: calc(100vw - 0.6rem);
+            }
         }
     </style>
 </head>
 <body>
     <div class="powered-by">Powered by Gemini-2.5-flash</div>
+    <div class="made-by">Made by Allen Zhou, for internal use only.</div>
     <div class="container">
         <h1>🎨 商品主体抠图工具</h1>
 
