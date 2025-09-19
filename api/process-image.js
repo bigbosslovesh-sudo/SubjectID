@@ -6,15 +6,14 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-// 智能日志函数
+// 智能日志函数 - 强制启用Vercel调试
 function debugLog(...args) {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(...args);
-  }
+  // 在Vercel环境中强制启用日志以诊断问题
+  console.log('[VERCEL-DEBUG]', ...args);
 }
 
 function errorLog(...args) {
-  console.error(...args);
+  console.error('[VERCEL-ERROR]', ...args);
 }
 
 // 初始化 302.ai API 配置
@@ -285,6 +284,13 @@ async function generateProductImage(imageFile) {
     // 检查 AI 是否返回了处理后的图片
     const response = apiResponse.data.choices?.[0]?.message?.content || '';
 
+    // 详细记录AI响应以诊断格式差异
+    debugLog('AI响应完整内容长度:', response.length);
+    debugLog('AI响应前500字符:', response.substring(0, 500));
+    debugLog('AI响应是否包含data:image:', response.includes('data:image/'));
+    debugLog('AI响应是否包含base64:', response.includes('base64,'));
+    debugLog('AI响应是否包含http链接:', /https?:\/\//.test(response));
+
     // 方式1: 检查是否返回了base64图片数据
     if (response.includes('data:image/') || response.includes('base64,')) {
       debugLog('AI返回了base64图片数据，正在处理...');
@@ -316,13 +322,13 @@ async function generateProductImage(imageFile) {
     const urlMatch = response.match(/!\[.*?\]\((https?:\/\/[^\)]+\.(png|jpg|jpeg|gif|webp))\)/i);
     if (urlMatch) {
       const imageUrl = urlMatch[1];
-      debugLog('AI返回了图片URL，正在下载:', imageUrl);
+      debugLog('AI返回了图片URL（Markdown格式），正在下载:', imageUrl);
       const downloadedBuffer = await downloadImage(imageUrl);
       return downloadedBuffer.toString('base64');
     }
 
-    // 方式3: 检查纯URL格式 (无Markdown)
-    const directUrlMatch = response.match(/(https?:\/\/[^\s]+\.(png|jpg|jpeg|gif|webp))/i);
+    // 方式3: 检查纯URL格式 (无Markdown) - 扩展版本
+    const directUrlMatch = response.match(/(https?:\/\/[^\s\"\'\)\]\}]+\.(png|jpg|jpeg|gif|webp))/i);
     if (directUrlMatch) {
       const imageUrl = directUrlMatch[1];
       debugLog('AI返回了直接图片URL，正在下载:', imageUrl);
@@ -330,12 +336,52 @@ async function generateProductImage(imageFile) {
       return downloadedBuffer.toString('base64');
     }
 
+    // 方式4: 更宽松的URL匹配 - 适配不同AI响应格式
+    const flexibleUrlMatch = response.match(/(https?:\/\/[^\s\"\'\)\]\}\n]+(?:\.png|\.jpg|\.jpeg|\.gif|\.webp|\/imgs\/[^\/\s\"\'\)\]\}\n]+))/i);
+    if (flexibleUrlMatch) {
+      const imageUrl = flexibleUrlMatch[1];
+      debugLog('AI返回了图片URL（宽松匹配），正在下载:', imageUrl);
+      try {
+        const downloadedBuffer = await downloadImage(imageUrl);
+        return downloadedBuffer.toString('base64');
+      } catch (downloadError) {
+        debugLog('宽松匹配URL下载失败:', downloadError.message);
+      }
+    }
+
+    // 方式5: 尝试提取任何可能的file.302.ai URL
+    const ai302UrlMatch = response.match(/(https?:\/\/file\.302\.ai\/[^\s\"\'\)\]\}\n]+)/i);
+    if (ai302UrlMatch) {
+      const imageUrl = ai302UrlMatch[1];
+      debugLog('AI返回了302.ai文件URL，正在下载:', imageUrl);
+      try {
+        const downloadedBuffer = await downloadImage(imageUrl);
+        return downloadedBuffer.toString('base64');
+      } catch (downloadError) {
+        debugLog('302.ai URL下载失败:', downloadError.message);
+      }
+    }
+
     // 如果所有方式都失败，抛出详细错误
     debugLog('AI响应内容 (前200字符):', response.substring(0, 200));
-    throw new Error(`AI响应格式不支持。响应内容: ${response.substring(0, 100)}...`);
+    debugLog('所有URL提取方式都失败，准备抛出错误');
+
+    // 提供更详细的错误信息用于诊断
+    let errorDetail = `AI响应格式不支持。`;
+    if (response.length === 0) {
+      errorDetail += `AI返回空响应。`;
+    } else if (response.length < 50) {
+      errorDetail += `AI响应过短：${response}`;
+    } else {
+      errorDetail += `响应长度：${response.length}字符，前100字符：${response.substring(0, 100)}...`;
+    }
+
+    throw new Error(errorDetail);
 
   } catch (error) {
-    console.error('AI生成处理失败:', error.message);
+    errorLog('AI生成处理失败:', error.message);
+    errorLog('错误类型:', error.constructor.name);
+    errorLog('错误代码:', error.code || 'N/A');
 
     // 根据错误类型返回具体的错误信息 - 增强Vercel错误处理
     if (error.code === 'ECONNRESET' || error.code === 'ECONNABORTED') {
@@ -348,6 +394,11 @@ async function generateProductImage(imageFile) {
       throw new Error('请求数据过大，请尝试上传较小的图片文件');
     } else if (error.message && error.message.includes('timeout')) {
       throw new Error('处理超时，Vercel环境下请稍后重试或联系技术支持');
+    } else if (error.message && error.message.includes('AI响应格式不支持')) {
+      // 这是我们的自定义错误，提供更友好的信息
+      throw new Error(`AI服务返回了无法识别的格式，请稍后重试。如果问题持续，请联系技术支持。详情：${error.message}`);
+    } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      throw new Error('无法连接到AI服务，请检查网络连接');
     } else {
       throw new Error(`AI生成处理失败: ${error.message}`);
     }
