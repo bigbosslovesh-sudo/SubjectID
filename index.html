@@ -590,7 +590,7 @@
                 const formData = new FormData();
                 formData.append('image', currentFile);
 
-                const response = await fetch('/process-image', {
+                const response = await fetch('/api/process-image', {
                     method: 'POST',
                     body: formData
                 });
@@ -925,7 +925,7 @@
                     const formData = new FormData();
                     formData.append('image', fileItem.file);
 
-                    const response = await fetch('/process-image', {
+                    const response = await fetch('/api/process-image', {
                         method: 'POST',
                         body: formData
                     });
@@ -997,7 +997,7 @@
             // 多个文件时，使用服务器端打包
             try {
                 const urls = successfulFiles.map(item => item.processedUrl);
-                const response = await fetch('/package-results', {
+                const response = await fetch('/api/package-results', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
