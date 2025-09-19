@@ -59,7 +59,7 @@ async function handleImageProcess(req, res) {
   const form = new IncomingForm({
     uploadDir: tempDir,
     keepExtensions: true,
-    maxFileSize: 10 * 1024 * 1024, // 10MB
+    maxFileSize: 5 * 1024 * 1024, // 5MB - 减少以适配Vercel请求限制
     filter: ({ mimetype }) => {
       return mimetype && mimetype.startsWith('image/');
     }
@@ -79,10 +79,37 @@ async function handleImageProcess(req, res) {
         return;
       }
 
+      // Vercel环境下的文件大小预检查
+      const fileSize = (imageFile[0] || imageFile).size;
+      if (fileSize > 5 * 1024 * 1024) { // 5MB
+        res.status(413).json({
+          success: false,
+          error: '文件过大，请上传小于5MB的图片文件'
+        });
+        return;
+      }
+
       // 处理上传的图片
       const processedImageData = await generateProductImage(imageFile[0] || imageFile);
 
-      // 返回base64编码的图片数据而不是文件路径
+      // 优化响应：避免大型base64数据导致413错误
+      if (processedImageData && processedImageData.length > 0) {
+        // 检查base64数据大小，避免超出Vercel 4.5MB响应限制
+        const estimatedResponseSize = Buffer.byteLength(JSON.stringify({
+          success: true,
+          processedImageUrl: `data:image/png;base64,${processedImageData}`
+        }));
+
+        if (estimatedResponseSize > 4 * 1024 * 1024) { // 4MB安全阈值
+          res.status(200).json({
+            success: false,
+            error: '处理后的图片过大，请尝试上传较小的图片或联系技术支持'
+          });
+          return;
+        }
+      }
+
+      // 返回处理结果
       res.status(200).json({
         success: true,
         processedImageUrl: `data:image/png;base64,${processedImageData}`
@@ -173,10 +200,10 @@ async function generateProductImage(imageFile) {
 
     debugLog('使用AI生成专业产品照...');
 
-    // 压缩图片以减少payload大小 - 适配Vercel限制
+    // 更激进压缩图片以适配Vercel严格限制
     const compressedImageBuffer = await sharp(imageFile.filepath)
-      .resize(1000, 750, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 60 })
+      .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 35 })
       .toBuffer();
 
     const imageBase64 = compressedImageBuffer.toString('base64');
@@ -250,7 +277,7 @@ async function generateProductImage(imageFile) {
         'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json'
       },
-      timeout: 55000 // 55秒超时适配Vercel
+      timeout: 58000 // 58秒超时最大化Vercel限额（60秒-2秒缓冲）
     });
 
     debugLog('AI响应状态:', apiResponse.status);
@@ -310,13 +337,17 @@ async function generateProductImage(imageFile) {
   } catch (error) {
     console.error('AI生成处理失败:', error.message);
 
-    // 根据错误类型返回具体的错误信息
+    // 根据错误类型返回具体的错误信息 - 增强Vercel错误处理
     if (error.code === 'ECONNRESET' || error.code === 'ECONNABORTED') {
       throw new Error('AI处理超时，请检查网络连接或稍后重试');
     } else if (error.response && error.response.status === 401) {
       throw new Error('API认证失败，请检查API密钥配置');
     } else if (error.response && error.response.status === 429) {
       throw new Error('API调用频率超限，请稍后重试');
+    } else if (error.response && error.response.status === 413) {
+      throw new Error('请求数据过大，请尝试上传较小的图片文件');
+    } else if (error.message && error.message.includes('timeout')) {
+      throw new Error('处理超时，Vercel环境下请稍后重试或联系技术支持');
     } else {
       throw new Error(`AI生成处理失败: ${error.message}`);
     }
