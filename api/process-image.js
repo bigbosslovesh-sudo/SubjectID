@@ -1,10 +1,10 @@
 // Vercel serverless function for image processing
-const { IncomingForm } = require('formidable');
-const axios = require('axios');
-const sharp = require('sharp');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+import { IncomingForm } from 'formidable';
+import axios from 'axios';
+import sharp from 'sharp';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 // 智能日志函数
 function debugLog(...args) {

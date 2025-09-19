@@ -17,17 +17,18 @@ function errorLog(...args) {
   console.error(...args);
 }
 
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-const { IncomingForm } = require('formidable');
-const axios = require('axios');
-const sharp = require('sharp');
-const { Jimp } = require('jimp');
-const archiver = require('archiver');
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import { IncomingForm } from 'formidable';
+import axios from 'axios';
+import sharp from 'sharp';
+import { Jimp } from 'jimp';
+import archiver from 'archiver';
 
 // 读取环境变量
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 
 // 初始化 302.ai API 配置
 const API_KEY = process.env.API_KEY || 'your_api_key_here';
@@ -52,7 +53,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // 处理图片上传和处理请求
-  if (req.url === '/process-image' && req.method === 'POST') {
+  if ((req.url === '/process-image' || req.url === '/api/process-image') && req.method === 'POST') {
     try {
       await handleImageProcess(req, res);
     } catch (error) {
@@ -64,7 +65,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // 处理批量打包下载请求
-  if (req.url === '/package-results' && req.method === 'POST') {
+  if ((req.url === '/package-results' || req.url === '/api/package-results') && req.method === 'POST') {
     try {
       await handlePackageResults(req, res);
     } catch (error) {

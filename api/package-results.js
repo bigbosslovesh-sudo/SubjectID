@@ -1,8 +1,8 @@
 // Vercel serverless function for batch packaging
-const archiver = require('archiver');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+import archiver from 'archiver';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 // Vercel serverless function handler
 export default async function handler(req, res) {
