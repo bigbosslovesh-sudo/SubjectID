@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev)",
+      "Bash(npm install sharp jimp)",
+      "Bash(pkill -f \"npm run dev\")",
+      "Bash(node index.js)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

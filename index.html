@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品主体抠图工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            border-radius: 50px;
+            padding: 4px;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            border-radius: 46px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .mode-btn:hover:not(.active) {
+            color: #667eea;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #fafafa;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #f0f4ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            color: #ddd;
+            margin-bottom: 20px;
+            transition: color 0.3s ease;
+        }
+
+        .upload-area:hover .upload-icon {
+            color: #667eea;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        .preview-container {
+            margin-top: 30px;
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .image-section {
+            text-align: center;
+        }
+
+        .image-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.3em;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 2px solid #f0f0f0;
+        }
+
+        .process-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 30px auto;
+            display: block;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .process-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .process-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(86, 171, 47, 0.4);
+        }
+
+        .batch-upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #fafafa;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: none;
+        }
+
+        .batch-upload-area:hover, .batch-upload-area.dragover {
+            border-color: #667eea;
+            background: #f0f4ff;
+            transform: translateY(-2px);
+        }
+
+        .batch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .batch-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+        }
+
+        .batch-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .batch-item-status {
+            margin-top: 10px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending { color: #ffa500; }
+        .status-processing { color: #2196f3; }
+        .status-completed { color: #4caf50; }
+        .status-error { color: #f44336; }
+
+        .batch-controls {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .batch-progress {
+            flex: 1;
+            margin: 0 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .batch-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+            border-left: 4px solid #c62828;
+        }
+
+        .success-message {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+            border-left: 4px solid #2e7d32;
+        }
+
+        .powered-by {
+            position: fixed;
+            top: 1.5vw;
+            left: 1.5vw;
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+            padding: 0.6rem 1rem;
+            border-radius: 1.2rem;
+            font-size: max(0.7rem, min(0.9rem, 2.5vw));
+            font-weight: 600;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            max-width: calc(100vw - 3vw);
+            text-overflow: ellipsis;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .preview-container {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .powered-by {
+                top: 0.8rem;
+                left: 0.8rem;
+                font-size: max(0.6rem, min(0.75rem, 3vw));
+                padding: 0.4rem 0.8rem;
+                border-radius: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .powered-by {
+                top: 0.5rem;
+                left: 0.5rem;
+                font-size: max(0.5rem, min(0.65rem, 3.5vw));
+                padding: 0.3rem 0.6rem;
+                border-radius: 0.8rem;
+                max-width: calc(100vw - 1rem);
+            }
+        }
+
+        @media (max-width: 320px) {
+            .powered-by {
+                font-size: 0.5rem;
+                padding: 0.2rem 0.5rem;
+                border-radius: 0.6rem;
+                top: 0.3rem;
+                left: 0.3rem;
+                max-width: calc(100vw - 0.6rem);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="powered-by">Powered by Gemini-2.5-flash</div>
+    <div class="container">
+        <h1>🎨 商品主体抠图工具</h1>
+
+        <!-- 模式选择器 -->
+        <div class="mode-selector">
+            <button class="mode-btn active" id="singleModeBtn">单张图片</button>
+            <button class="mode-btn" id="batchModeBtn">批量处理</button>
+        </div>
+
+        <p class="subtitle" id="subtitle">上传包含商品的图片，AI自动识别，一键下载商品主体图</p>
+
+        <!-- 单张图片上传区域 -->
+        <div class="upload-area" id="singleUploadArea" onclick="document.getElementById('imageInput').click()">
+            <div class="upload-icon">📷</div>
+            <div class="upload-text">点击上传或拖拽图片到这里</div>
+            <div class="upload-hint">支持 JPG、PNG、GIF 格式，最大 10MB</div>
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+
+        <!-- 批量上传区域 -->
+        <div class="batch-upload-area" id="batchUploadArea">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">拖拽多张图片或整个文件夹到这里</div>
+            <div class="upload-hint">支持批量上传，自动识别图片文件</div>
+            <input type="file" id="batchInput" accept="image/*" multiple>
+            <input type="file" id="folderInput" webkitdirectory accept="image/*" style="display: none;">
+            <button onclick="document.getElementById('batchInput').click()" style="margin: 10px 5px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">选择图片</button>
+            <button onclick="document.getElementById('folderInput').click()" style="margin: 10px 5px; padding: 8px 16px; background: #764ba2; color: white; border: none; border-radius: 5px; cursor: pointer;">选择文件夹</button>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <div class="loading" id="loadingSection">
+            <div class="loading-spinner"></div>
+            <div>AI 正在处理您的图片，请稍候...</div>
+        </div>
+
+        <button class="process-btn" id="processBtn" style="display: none;">🚀 开始抠图处理</button>
+
+        <div class="preview-container" id="previewContainer">
+            <div class="image-section">
+                <h3>原始图片</h3>
+                <img id="originalImage" class="image-preview" alt="原始图片">
+            </div>
+            <div class="image-section">
+                <h3>处理结果</h3>
+                <img id="processedImage" class="image-preview" alt="处理后图片" style="display: none;">
+                <div id="processedPlaceholder" style="display: flex; align-items: center; justify-content: center; height: 300px; background: #f5f5f5; border-radius: 10px; color: #999;">
+                    等待处理...
+                </div>
+                <button class="download-btn" id="downloadBtn">💾 下载商品主体图</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.querySelector('.upload-area');
+        const imageInput = document.getElementById('imageInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const originalImage = document.getElementById('originalImage');
+        const processedImage = document.getElementById('processedImage');
+        const processedPlaceholder = document.getElementById('processedPlaceholder');
+        const processBtn = document.getElementById('processBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const loadingSection = document.getElementById('loadingSection');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+
+        let currentFile = null;
+        let processedImageUrl = null;
+
+        // 拖拽上传功能
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            // 文件类型验证
+            if (!file.type.startsWith('image/')) {
+                showError('请选择有效的图片文件！');
+                return;
+            }
+
+            // 文件大小验证 (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showError('图片大小不能超过 10MB！');
+                return;
+            }
+
+            currentFile = file;
+
+            // 显示原始图片预览
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                originalImage.src = e.target.result;
+                previewContainer.style.display = 'grid';
+                processBtn.style.display = 'block';
+
+                // 重置处理结果
+                processedImage.style.display = 'none';
+                processedPlaceholder.style.display = 'flex';
+                downloadBtn.style.display = 'none';
+
+                hideMessages();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        processBtn.addEventListener('click', async () => {
+            if (!currentFile) return;
+
+            // 显示加载状态
+            loadingSection.style.display = 'block';
+            processBtn.disabled = true;
+            hideMessages();
+
+            try {
+                const formData = new FormData();
+                formData.append('image', currentFile);
+
+                const response = await fetch('/process-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('图片处理失败，请重试');
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // 显示处理结果
+                    processedImage.src = result.processedImageUrl;
+                    processedImage.style.display = 'block';
+                    processedPlaceholder.style.display = 'none';
+                    downloadBtn.style.display = 'inline-block';
+                    processedImageUrl = result.processedImageUrl;
+
+                    showSuccess('图片处理完成！');
+                } else {
+                    throw new Error(result.error || '处理失败');
+                }
+            } catch (error) {
+                showError('处理失败: ' + error.message);
+            } finally {
+                loadingSection.style.display = 'none';
+                processBtn.disabled = false;
+            }
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            if (processedImageUrl) {
+                const link = document.createElement('a');
+                link.href = processedImageUrl;
+                link.download = 'processed_' + currentFile.name.replace(/\.[^/.]+$/, '') + '.png';
+                link.click();
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        // 模式切换功能
+        const singleModeBtn = document.getElementById('singleModeBtn');
+        const batchModeBtn = document.getElementById('batchModeBtn');
+        const singleUploadArea = document.getElementById('singleUploadArea');
+        const batchUploadArea = document.getElementById('batchUploadArea');
+        const batchInput = document.getElementById('batchInput');
+        const folderInput = document.getElementById('folderInput');
+        const subtitle = document.getElementById('subtitle');
+
+        let currentMode = 'single';
+        let batchFiles = [];
+
+        singleModeBtn.addEventListener('click', () => switchMode('single'));
+        batchModeBtn.addEventListener('click', () => switchMode('batch'));
+
+        function switchMode(mode) {
+            currentMode = mode;
+
+            if (mode === 'single') {
+                singleModeBtn.classList.add('active');
+                batchModeBtn.classList.remove('active');
+                singleUploadArea.style.display = 'block';
+                batchUploadArea.style.display = 'none';
+                subtitle.textContent = '上传包含商品的图片，AI自动识别，一键下载商品主体图';
+
+                // 重置批量处理相关元素
+                resetBatchMode();
+            } else {
+                singleModeBtn.classList.remove('active');
+                batchModeBtn.classList.add('active');
+                singleUploadArea.style.display = 'none';
+                batchUploadArea.style.display = 'block';
+                subtitle.textContent = '批量上传商品图片，AI 智能批处理，打包下载所有结果';
+
+                // 重置单图处理相关元素
+                resetSingleMode();
+            }
+        }
+
+        function resetSingleMode() {
+            previewContainer.style.display = 'none';
+            processBtn.style.display = 'none';
+            currentFile = null;
+            processedImageUrl = null;
+            hideMessages();
+        }
+
+        function resetBatchMode() {
+            batchFiles = [];
+            const batchGrid = document.querySelector('.batch-grid');
+            if (batchGrid) batchGrid.remove();
+            const batchControls = document.querySelector('.batch-controls');
+            if (batchControls) batchControls.style.display = 'none';
+            hideMessages();
+        }
+
+        // 批量文件选择处理
+        batchInput.addEventListener('change', (e) => {
+            handleBatchFiles(Array.from(e.target.files));
+        });
+
+        folderInput.addEventListener('change', (e) => {
+            handleBatchFiles(Array.from(e.target.files));
+        });
+
+        // 批量拖拽功能
+        batchUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            batchUploadArea.classList.add('dragover');
+        });
+
+        batchUploadArea.addEventListener('dragleave', () => {
+            batchUploadArea.classList.remove('dragover');
+        });
+
+        batchUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            batchUploadArea.classList.remove('dragover');
+
+            const items = e.dataTransfer.items;
+            const files = [];
+
+            // 处理文件和文件夹
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i].webkitGetAsEntry();
+                if (item) {
+                    if (item.isFile) {
+                        item.file((file) => {
+                            if (file.type.startsWith('image/')) {
+                                files.push(file);
+                                if (files.length === items.length) {
+                                    handleBatchFiles(files);
+                                }
+                            }
+                        });
+                    } else if (item.isDirectory) {
+                        readDirectory(item, files, () => {
+                            handleBatchFiles(files);
+                        });
+                    }
+                }
+            }
+        });
+
+        function readDirectory(dirEntry, files, callback) {
+            const dirReader = dirEntry.createReader();
+            dirReader.readEntries((entries) => {
+                let entriesLeft = entries.length;
+                if (entriesLeft === 0) {
+                    callback();
+                    return;
+                }
+
+                entries.forEach((entry) => {
+                    if (entry.isFile) {
+                        entry.file((file) => {
+                            if (file.type.startsWith('image/')) {
+                                files.push(file);
+                            }
+                            entriesLeft--;
+                            if (entriesLeft === 0) callback();
+                        });
+                    } else if (entry.isDirectory) {
+                        readDirectory(entry, files, () => {
+                            entriesLeft--;
+                            if (entriesLeft === 0) callback();
+                        });
+                    } else {
+                        entriesLeft--;
+                        if (entriesLeft === 0) callback();
+                    }
+                });
+            });
+        }
+
+        function handleBatchFiles(files) {
+            // 过滤图片文件
+            const imageFiles = files.filter(file => file.type.startsWith('image/'));
+
+            if (imageFiles.length === 0) {
+                showError('未找到有效的图片文件！');
+                return;
+            }
+
+            // 文件大小验证
+            const oversizedFiles = imageFiles.filter(file => file.size > 10 * 1024 * 1024);
+            if (oversizedFiles.length > 0) {
+                showError(`有 ${oversizedFiles.length} 个文件超过 10MB 限制！`);
+                return;
+            }
+
+            batchFiles = imageFiles.map((file, index) => ({
+                id: index,
+                file: file,
+                status: 'pending',
+                originalUrl: null,
+                processedUrl: null,
+                error: null
+            }));
+
+            createBatchGrid();
+            showBatchControls();
+            hideMessages();
+        }
+
+        function createBatchGrid() {
+            // 移除现有的批量网格
+            const existingGrid = document.querySelector('.batch-grid');
+            if (existingGrid) existingGrid.remove();
+
+            // 创建新的批量网格
+            const batchGrid = document.createElement('div');
+            batchGrid.className = 'batch-grid';
+
+            batchFiles.forEach((fileItem) => {
+                const batchItem = document.createElement('div');
+                batchItem.className = 'batch-item';
+                batchItem.id = `batch-item-${fileItem.id}`;
+
+                const img = document.createElement('img');
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    img.src = e.target.result;
+                    fileItem.originalUrl = e.target.result;
+                };
+                reader.readAsDataURL(fileItem.file);
+
+                const fileName = document.createElement('div');
+                fileName.textContent = fileItem.file.name;
+                fileName.style.fontSize = '12px';
+                fileName.style.marginTop = '8px';
+                fileName.style.fontWeight = '600';
+                fileName.style.color = '#333';
+
+                const status = document.createElement('div');
+                status.className = 'batch-item-status status-pending';
+                status.textContent = '等待处理';
+
+                batchItem.appendChild(img);
+                batchItem.appendChild(fileName);
+                batchItem.appendChild(status);
+                batchGrid.appendChild(batchItem);
+            });
+
+            batchUploadArea.parentNode.insertBefore(batchGrid, batchUploadArea.nextSibling);
+        }
+
+        function showBatchControls() {
+            let batchControls = document.querySelector('.batch-controls');
+            if (!batchControls) {
+                batchControls = document.createElement('div');
+                batchControls.className = 'batch-controls';
+
+                const startBtn = document.createElement('button');
+                startBtn.className = 'process-btn';
+                startBtn.textContent = '🚀 开始批量处理';
+                startBtn.onclick = startBatchProcessing;
+
+                const batchProgress = document.createElement('div');
+                batchProgress.className = 'batch-progress';
+
+                const progressBar = document.createElement('div');
+                progressBar.className = 'progress-bar';
+                const progressFill = document.createElement('div');
+                progressFill.className = 'progress-fill';
+                progressBar.appendChild(progressFill);
+
+                const batchInfo = document.createElement('div');
+                batchInfo.className = 'batch-info';
+                batchInfo.innerHTML = `
+                    <span id="progress-text">0 / ${batchFiles.length}</span>
+                    <span id="progress-percent">0%</span>
+                `;
+
+                batchProgress.appendChild(progressBar);
+                batchProgress.appendChild(batchInfo);
+
+                const downloadAllBtn = document.createElement('button');
+                downloadAllBtn.className = 'download-btn';
+                downloadAllBtn.textContent = '📦 打包下载全部';
+                downloadAllBtn.style.display = 'none';
+                downloadAllBtn.onclick = downloadAllResults;
+
+                batchControls.appendChild(startBtn);
+                batchControls.appendChild(batchProgress);
+                batchControls.appendChild(downloadAllBtn);
+
+                const batchGrid = document.querySelector('.batch-grid');
+                batchGrid.parentNode.insertBefore(batchControls, batchGrid.nextSibling);
+            }
+
+            batchControls.style.display = 'flex';
+        }
+
+        async function startBatchProcessing() {
+            const startBtn = document.querySelector('.batch-controls .process-btn');
+            const downloadAllBtn = document.querySelector('.batch-controls .download-btn');
+            const progressFill = document.querySelector('.progress-fill');
+            const progressText = document.getElementById('progress-text');
+            const progressPercent = document.getElementById('progress-percent');
+
+            startBtn.disabled = true;
+            startBtn.textContent = '处理中...';
+            downloadAllBtn.style.display = 'none';
+
+            let completed = 0;
+            let successful = 0;
+
+            for (let i = 0; i < batchFiles.length; i++) {
+                const fileItem = batchFiles[i];
+
+                // 更新状态为处理中
+                updateBatchItemStatus(fileItem.id, 'processing', '处理中...');
+
+                try {
+                    const formData = new FormData();
+                    formData.append('image', fileItem.file);
+
+                    const response = await fetch('/process-image', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('处理失败');
+                    }
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        fileItem.processedUrl = result.processedImageUrl;
+                        fileItem.status = 'completed';
+                        updateBatchItemStatus(fileItem.id, 'completed', '处理完成');
+                        successful++;
+                    } else {
+                        throw new Error(result.error || '处理失败');
+                    }
+                } catch (error) {
+                    fileItem.status = 'error';
+                    fileItem.error = error.message;
+                    updateBatchItemStatus(fileItem.id, 'error', '处理失败');
+                }
+
+                completed++;
+                const progress = Math.round((completed / batchFiles.length) * 100);
+                progressFill.style.width = progress + '%';
+                progressText.textContent = `${completed} / ${batchFiles.length}`;
+                progressPercent.textContent = progress + '%';
+            }
+
+            startBtn.disabled = false;
+            startBtn.textContent = '🚀 开始批量处理';
+
+            if (successful > 0) {
+                downloadAllBtn.style.display = 'inline-block';
+                showSuccess(`批量处理完成！成功处理 ${successful} 张图片`);
+            } else {
+                showError('批量处理失败，没有成功处理任何图片');
+            }
+        }
+
+        function updateBatchItemStatus(id, status, text) {
+            const batchItem = document.getElementById(`batch-item-${id}`);
+            if (batchItem) {
+                const statusElement = batchItem.querySelector('.batch-item-status');
+                statusElement.className = `batch-item-status status-${status}`;
+                statusElement.textContent = text;
+            }
+        }
+
+        async function downloadAllResults() {
+            const successfulFiles = batchFiles.filter(item => item.status === 'completed');
+
+            if (successfulFiles.length === 0) {
+                showError('没有成功处理的图片可以下载');
+                return;
+            }
+
+            // 如果只有一个文件，直接下载
+            if (successfulFiles.length === 1) {
+                const link = document.createElement('a');
+                link.href = successfulFiles[0].processedUrl;
+                link.download = 'processed_' + successfulFiles[0].file.name.replace(/\.[^/.]+$/, '') + '.png';
+                link.click();
+                return;
+            }
+
+            // 多个文件时，使用服务器端打包
+            try {
+                const urls = successfulFiles.map(item => item.processedUrl);
+                const response = await fetch('/package-results', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ urls })
+                });
+
+                if (!response.ok) {
+                    throw new Error('打包失败');
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const link = document.createElement('a');
+                    link.href = result.downloadUrl;
+                    link.download = `processed_batch_${new Date().getTime()}.zip`;
+                    link.click();
+                } else {
+                    throw new Error(result.error || '打包失败');
+                }
+            } catch (error) {
+                showError('打包下载失败: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+

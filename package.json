@@ -1,0 +1,25 @@
+{
+  "name": "ai-product-extractor",
+  "version": "1.0.0",
+  "description": "AI-powered product image processor with automatic subject extraction",
+  "main": "index.js",
+  "scripts": {
+    "start": "NODE_ENV=production node index.js",
+    "dev": "NODE_ENV=development node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["ai", "image-processing", "product-extraction", "nodejs"],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "axios": "^1.12.2",
+    "dotenv": "^17.2.2",
+    "formidable": "^3.5.4",
+    "jimp": "^1.6.0",
+    "sharp": "^0.34.4"
+  }
+}
