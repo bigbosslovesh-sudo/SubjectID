@@ -154,9 +154,11 @@
         }
 
         .process-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
+            background: rgba(102, 126, 234, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: #667eea;
+            border: 1px solid rgba(102, 126, 234, 0.3);
             padding: 15px 40px;
             border-radius: 50px;
             font-size: 1.1em;
@@ -165,24 +167,29 @@
             margin: 30px auto;
             display: block;
             transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.1);
         }
 
         .process-btn:hover {
+            background: rgba(102, 126, 234, 0.25);
+            border-color: rgba(102, 126, 234, 0.5);
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.2);
         }
 
         .process-btn:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
+            background: rgba(102, 126, 234, 0.08);
         }
 
         .download-btn {
-            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
-            color: white;
-            border: none;
+            background: rgba(76, 175, 80, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: #4caf50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
             padding: 12px 30px;
             border-radius: 25px;
             font-size: 1em;
@@ -191,11 +198,14 @@
             margin-top: 15px;
             transition: all 0.3s ease;
             display: none;
+            box-shadow: 0 8px 32px rgba(76, 175, 80, 0.1);
         }
 
         .download-btn:hover {
+            background: rgba(76, 175, 80, 0.25);
+            border-color: rgba(76, 175, 80, 0.5);
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(86, 171, 47, 0.4);
+            box-shadow: 0 12px 40px rgba(76, 175, 80, 0.2);
         }
 
         .batch-upload-area {
@@ -247,9 +257,125 @@
         }
 
         .status-pending { color: #ffa500; }
+        .status-queued { color: #9e9e9e; }
         .status-processing { color: #2196f3; }
         .status-completed { color: #4caf50; }
         .status-error { color: #f44336; }
+        .status-timeout { color: #ff9800; }
+
+        .batch-item-actions {
+            margin-top: 8px;
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .batch-action-btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .download-single-btn {
+            background: rgba(76, 175, 80, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #4caf50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .download-single-btn:hover {
+            background: rgba(76, 175, 80, 0.25);
+            border-color: rgba(76, 175, 80, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .retry-btn {
+            background: rgba(255, 152, 0, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #ff9800;
+            border: 1px solid rgba(255, 152, 0, 0.3);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .retry-btn:hover {
+            background: rgba(255, 152, 0, 0.25);
+            border-color: rgba(255, 152, 0, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .batch-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .concurrent-indicator {
+            background: rgba(33, 150, 243, 0.08);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(33, 150, 243, 0.2);
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin-top: 8px;
+        }
+
+        .concurrent-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .concurrent-stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #2196f3;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .concurrent-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                font-size: 10px;
+            }
+        }
 
         .batch-controls {
             display: none;
@@ -448,7 +574,7 @@
 </head>
 <body>
     <div class="powered-by">Powered by Gemini-2.5-flash</div>
-    <div class="made-by">Made by Allen Zhou, for internal use only.</div>
+    <div class="made-by">Made by Allen Zhou, for internal use only</div>
     <div class="container">
         <h1>🎨 商品主体抠图工具</h1>
 
@@ -782,7 +908,7 @@
             });
         }
 
-        function handleBatchFiles(files) {
+        function handleBatchFiles(files, folderName = null) {
             // 过滤图片文件
             const imageFiles = files.filter(file => file.type.startsWith('image/'));
 
@@ -798,13 +924,38 @@
                 return;
             }
 
+            // 提取文件夹名称
+            if (!folderName && imageFiles.length > 0) {
+                const firstFile = imageFiles[0];
+                if (firstFile.webkitRelativePath) {
+                    const pathParts = firstFile.webkitRelativePath.split('/');
+                    folderName = pathParts[0];
+                }
+            }
+
+            // 全局变量存储批处理信息
+            window.batchProcessInfo = {
+                folderName: folderName || 'batch_images',
+                totalFiles: imageFiles.length,
+                completedFiles: 0,
+                successfulFiles: 0,
+                failedFiles: 0,
+                timeoutFiles: 0,
+                retryQueue: [],
+                processingQueue: [],
+                concurrentLimit: 3
+            };
+
             batchFiles = imageFiles.map((file, index) => ({
                 id: index,
                 file: file,
-                status: 'pending',
+                status: 'queued',
                 originalUrl: null,
                 processedUrl: null,
-                error: null
+                error: null,
+                startTime: null,
+                abortController: null,
+                retryCount: 0
             }));
 
             createBatchGrid();
@@ -842,12 +993,35 @@
                 fileName.style.color = '#333';
 
                 const status = document.createElement('div');
-                status.className = 'batch-item-status status-pending';
-                status.textContent = '等待处理';
+                status.className = 'batch-item-status status-queued';
+                status.textContent = '排队中';
+
+                // 创建操作按钮区域
+                const actionsArea = document.createElement('div');
+                actionsArea.className = 'batch-item-actions';
+                actionsArea.style.display = 'none';
+
+                // 单个下载按钮
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'download-single-btn';
+                downloadBtn.innerHTML = '📥';
+                downloadBtn.title = '下载此图片';
+                downloadBtn.onclick = () => downloadSingleResult(fileItem.id);
+
+                // 重试按钮
+                const retryBtn = document.createElement('button');
+                retryBtn.className = 'retry-btn';
+                retryBtn.innerHTML = '🔄';
+                retryBtn.title = '重试处理';
+                retryBtn.onclick = () => retryProcessing(fileItem.id);
+
+                actionsArea.appendChild(downloadBtn);
+                actionsArea.appendChild(retryBtn);
 
                 batchItem.appendChild(img);
                 batchItem.appendChild(fileName);
                 batchItem.appendChild(status);
+                batchItem.appendChild(actionsArea);
                 batchGrid.appendChild(batchItem);
             });
 
@@ -881,8 +1055,21 @@
                     <span id="progress-percent">0%</span>
                 `;
 
+                // 并发处理指示器
+                const concurrentIndicator = document.createElement('div');
+                concurrentIndicator.className = 'concurrent-indicator';
+                concurrentIndicator.innerHTML = `
+                    <div class="concurrent-stats">
+                        <span>并发: <span id="concurrent-count">0</span>/${window.batchProcessInfo.concurrentLimit}</span>
+                        <span>成功: <span id="success-count">0</span></span>
+                        <span>失败: <span id="failed-count">0</span></span>
+                        <span>超时: <span id="timeout-count">0</span></span>
+                    </div>
+                `;
+
                 batchProgress.appendChild(progressBar);
                 batchProgress.appendChild(batchInfo);
+                batchProgress.appendChild(concurrentIndicator);
 
                 const downloadAllBtn = document.createElement('button');
                 downloadAllBtn.className = 'download-btn';
@@ -912,23 +1099,79 @@
             startBtn.textContent = '处理中...';
             downloadAllBtn.style.display = 'none';
 
-            let completed = 0;
-            let successful = 0;
+            // 重置所有文件状态
+            batchFiles.forEach(fileItem => {
+                fileItem.status = 'queued';
+                fileItem.startTime = null;
+                fileItem.abortController = null;
+                updateBatchItemStatus(fileItem.id, 'queued', '排队中');
+            });
 
-            for (let i = 0; i < batchFiles.length; i++) {
-                const fileItem = batchFiles[i];
+            // 重置全局统计信息
+            window.batchProcessInfo.completedFiles = 0;
+            window.batchProcessInfo.successfulFiles = 0;
+            window.batchProcessInfo.failedFiles = 0;
+            window.batchProcessInfo.timeoutFiles = 0;
+            window.batchProcessInfo.processingQueue = [];
+            updateConcurrentStats();
 
-                // 更新状态为处理中
+            // 创建处理队列
+            const processingQueue = [...batchFiles];
+            let currentlyProcessing = 0;
+
+            // 并发处理函数
+            async function processNextBatch() {
+                while (processingQueue.length > 0 && currentlyProcessing < window.batchProcessInfo.concurrentLimit) {
+                    const fileItem = processingQueue.shift();
+                    currentlyProcessing++;
+                    window.batchProcessInfo.processingQueue.push(fileItem.id);
+                    updateConcurrentStats();
+
+                    // 不等待单个任务完成，立即开始下一个
+                    processSingleFile(fileItem).then(() => {
+                        currentlyProcessing--;
+                        const queueIndex = window.batchProcessInfo.processingQueue.indexOf(fileItem.id);
+                        if (queueIndex > -1) {
+                            window.batchProcessInfo.processingQueue.splice(queueIndex, 1);
+                        }
+                        updateConcurrentStats();
+                        updateProgress();
+
+                        // 检查是否还有待处理的文件
+                        if (processingQueue.length > 0) {
+                            processNextBatch();
+                        } else if (currentlyProcessing === 0) {
+                            // 所有任务完成
+                            onBatchComplete();
+                        }
+                    });
+                }
+            }
+
+            // 处理单个文件
+            async function processSingleFile(fileItem) {
+                fileItem.status = 'processing';
+                fileItem.startTime = Date.now();
+                fileItem.abortController = new AbortController();
+
                 updateBatchItemStatus(fileItem.id, 'processing', '处理中...');
 
                 try {
                     const formData = new FormData();
                     formData.append('image', fileItem.file);
 
+                    // 60秒超时控制
+                    const timeoutId = setTimeout(() => {
+                        fileItem.abortController.abort();
+                    }, 60000);
+
                     const response = await fetch('/api/process-image', {
                         method: 'POST',
-                        body: formData
+                        body: formData,
+                        signal: fileItem.abortController.signal
                     });
+
+                    clearTimeout(timeoutId);
 
                     if (!response.ok) {
                         throw new Error('处理失败');
@@ -939,33 +1182,54 @@
                     if (result.success) {
                         fileItem.processedUrl = result.processedImageUrl;
                         fileItem.status = 'completed';
+                        window.batchProcessInfo.successfulFiles++;
                         updateBatchItemStatus(fileItem.id, 'completed', '处理完成');
-                        successful++;
+                        showActionsForItem(fileItem.id, 'completed');
                     } else {
                         throw new Error(result.error || '处理失败');
                     }
                 } catch (error) {
-                    fileItem.status = 'error';
-                    fileItem.error = error.message;
-                    updateBatchItemStatus(fileItem.id, 'error', '处理失败');
+                    if (error.name === 'AbortError') {
+                        fileItem.status = 'timeout';
+                        fileItem.error = '处理超时';
+                        window.batchProcessInfo.timeoutFiles++;
+                        updateBatchItemStatus(fileItem.id, 'timeout', '处理超时');
+                        showActionsForItem(fileItem.id, 'timeout');
+                    } else {
+                        fileItem.status = 'error';
+                        fileItem.error = error.message;
+                        window.batchProcessInfo.failedFiles++;
+                        updateBatchItemStatus(fileItem.id, 'error', '处理失败');
+                        showActionsForItem(fileItem.id, 'error');
+                    }
                 }
 
-                completed++;
-                const progress = Math.round((completed / batchFiles.length) * 100);
+                window.batchProcessInfo.completedFiles++;
+            }
+
+            // 更新进度条
+            function updateProgress() {
+                const progress = Math.round((window.batchProcessInfo.completedFiles / batchFiles.length) * 100);
                 progressFill.style.width = progress + '%';
-                progressText.textContent = `${completed} / ${batchFiles.length}`;
+                progressText.textContent = `${window.batchProcessInfo.completedFiles} / ${batchFiles.length}`;
                 progressPercent.textContent = progress + '%';
             }
 
-            startBtn.disabled = false;
-            startBtn.textContent = '🚀 开始批量处理';
+            // 批量处理完成
+            function onBatchComplete() {
+                startBtn.disabled = false;
+                startBtn.textContent = '🚀 开始批量处理';
 
-            if (successful > 0) {
-                downloadAllBtn.style.display = 'inline-block';
-                showSuccess(`批量处理完成！成功处理 ${successful} 张图片`);
-            } else {
-                showError('批量处理失败，没有成功处理任何图片');
+                if (window.batchProcessInfo.successfulFiles > 0) {
+                    downloadAllBtn.style.display = 'inline-block';
+                    showSuccess(`批量处理完成！成功: ${window.batchProcessInfo.successfulFiles}, 失败: ${window.batchProcessInfo.failedFiles}, 超时: ${window.batchProcessInfo.timeoutFiles}`);
+                } else {
+                    showError('批量处理失败，没有成功处理任何图片');
+                }
             }
+
+            // 开始并发处理
+            processNextBatch();
         }
 
         function updateBatchItemStatus(id, status, text) {
@@ -977,6 +1241,157 @@
             }
         }
 
+        // 更新并发统计信息
+        function updateConcurrentStats() {
+            const concurrentCount = document.getElementById('concurrent-count');
+            const successCount = document.getElementById('success-count');
+            const failedCount = document.getElementById('failed-count');
+            const timeoutCount = document.getElementById('timeout-count');
+
+            if (concurrentCount) concurrentCount.textContent = window.batchProcessInfo.processingQueue.length;
+            if (successCount) successCount.textContent = window.batchProcessInfo.successfulFiles;
+            if (failedCount) failedCount.textContent = window.batchProcessInfo.failedFiles;
+            if (timeoutCount) timeoutCount.textContent = window.batchProcessInfo.timeoutFiles;
+        }
+
+        // 显示操作按钮
+        function showActionsForItem(id, status) {
+            const batchItem = document.getElementById(`batch-item-${id}`);
+            if (batchItem) {
+                const actionsArea = batchItem.querySelector('.batch-item-actions');
+                const downloadBtn = batchItem.querySelector('.download-single-btn');
+                const retryBtn = batchItem.querySelector('.retry-btn');
+
+                if (status === 'completed') {
+                    downloadBtn.style.display = 'inline-block';
+                    retryBtn.style.display = 'none';
+                    actionsArea.style.display = 'flex';
+                } else if (status === 'timeout' || status === 'error') {
+                    downloadBtn.style.display = 'none';
+                    retryBtn.style.display = 'inline-block';
+                    actionsArea.style.display = 'flex';
+                } else {
+                    actionsArea.style.display = 'none';
+                }
+            }
+        }
+
+        // 单个文件下载
+        function downloadSingleResult(id) {
+            const fileItem = batchFiles.find(item => item.id === id);
+            if (fileItem && fileItem.processedUrl) {
+                const link = document.createElement('a');
+                link.href = fileItem.processedUrl;
+                link.download = 'processed_' + fileItem.file.name.replace(/\.[^/.]+$/, '') + '.png';
+                link.click();
+            }
+        }
+
+        // 重试处理
+        function retryProcessing(id) {
+            const fileItem = batchFiles.find(item => item.id === id);
+            if (fileItem) {
+                fileItem.retryCount++;
+                fileItem.status = 'queued';
+                fileItem.error = null;
+                fileItem.abortController = null;
+                updateBatchItemStatus(id, 'queued', '等待重试...');
+                showActionsForItem(id, 'queued');
+
+                // 将文件添加到重试队列末尾
+                window.batchProcessInfo.retryQueue.push(fileItem);
+
+                // 如果当前没有在批量处理中，立即开始处理重试队列
+                const startBtn = document.querySelector('.batch-controls .process-btn');
+                if (!startBtn.disabled) {
+                    processRetryQueue();
+                }
+            }
+        }
+
+        // 处理重试队列
+        async function processRetryQueue() {
+            if (window.batchProcessInfo.retryQueue.length === 0) return;
+
+            const retryItems = [...window.batchProcessInfo.retryQueue];
+            window.batchProcessInfo.retryQueue = [];
+
+            for (const fileItem of retryItems) {
+                if (window.batchProcessInfo.processingQueue.length >= window.batchProcessInfo.concurrentLimit) {
+                    // 如果队列满了，等待一下再试
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+
+                // 重新处理文件
+                fileItem.status = 'processing';
+                fileItem.startTime = Date.now();
+                fileItem.abortController = new AbortController();
+                window.batchProcessInfo.processingQueue.push(fileItem.id);
+                updateBatchItemStatus(fileItem.id, 'processing', '重试中...');
+                updateConcurrentStats();
+
+                // 使用现有的处理逻辑
+                processSingleFileForRetry(fileItem);
+            }
+        }
+
+        // 重试单个文件处理
+        async function processSingleFileForRetry(fileItem) {
+            try {
+                const formData = new FormData();
+                formData.append('image', fileItem.file);
+
+                const timeoutId = setTimeout(() => {
+                    fileItem.abortController.abort();
+                }, 60000);
+
+                const response = await fetch('/api/process-image', {
+                    method: 'POST',
+                    body: formData,
+                    signal: fileItem.abortController.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error('处理失败');
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    fileItem.processedUrl = result.processedImageUrl;
+                    fileItem.status = 'completed';
+                    window.batchProcessInfo.successfulFiles++;
+                    updateBatchItemStatus(fileItem.id, 'completed', '重试成功');
+                    showActionsForItem(fileItem.id, 'completed');
+                } else {
+                    throw new Error(result.error || '处理失败');
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    fileItem.status = 'timeout';
+                    fileItem.error = '重试超时';
+                    window.batchProcessInfo.timeoutFiles++;
+                    updateBatchItemStatus(fileItem.id, 'timeout', '重试超时');
+                    showActionsForItem(fileItem.id, 'timeout');
+                } else {
+                    fileItem.status = 'error';
+                    fileItem.error = error.message;
+                    window.batchProcessInfo.failedFiles++;
+                    updateBatchItemStatus(fileItem.id, 'error', '重试失败');
+                    showActionsForItem(fileItem.id, 'error');
+                }
+            }
+
+            // 从处理队列中移除
+            const queueIndex = window.batchProcessInfo.processingQueue.indexOf(fileItem.id);
+            if (queueIndex > -1) {
+                window.batchProcessInfo.processingQueue.splice(queueIndex, 1);
+            }
+            updateConcurrentStats();
+        }
+
         async function downloadAllResults() {
             const successfulFiles = batchFiles.filter(item => item.status === 'completed');
 
@@ -984,6 +1399,9 @@
                 showError('没有成功处理的图片可以下载');
                 return;
             }
+
+            // 获取文件夹名
+            const folderName = window.batchProcessInfo.folderName || 'batch_images';
 
             // 如果只有一个文件，直接下载
             if (successfulFiles.length === 1) {
@@ -1014,7 +1432,7 @@
                 if (result.success) {
                     const link = document.createElement('a');
                     link.href = result.downloadUrl;
-                    link.download = `processed_batch_${new Date().getTime()}.zip`;
+                    link.download = `processed_${folderName}.zip`;
                     link.click();
                 } else {
                     throw new Error(result.error || '打包失败');
