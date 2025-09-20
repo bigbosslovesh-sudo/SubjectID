@@ -58,7 +58,7 @@ async function handleImageProcess(req, res) {
   const form = new IncomingForm({
     uploadDir: tempDir,
     keepExtensions: true,
-    maxFileSize: 5 * 1024 * 1024, // 5MB - 减少以适配Vercel请求限制
+    maxFileSize: 10 * 1024 * 1024, // 10MB - 恢复原始限制
     filter: ({ mimetype }) => {
       return mimetype && mimetype.startsWith('image/');
     }
@@ -78,12 +78,12 @@ async function handleImageProcess(req, res) {
         return;
       }
 
-      // Vercel环境下的文件大小预检查
+      // Vercel环境下的文件大小预检查 - 恢复10MB限制
       const fileSize = (imageFile[0] || imageFile).size;
-      if (fileSize > 5 * 1024 * 1024) { // 5MB
+      if (fileSize > 10 * 1024 * 1024) { // 10MB
         res.status(413).json({
           success: false,
-          error: '文件过大，请上传小于5MB的图片文件'
+          error: '文件过大，请上传小于10MB的图片文件'
         });
         return;
       }
@@ -199,10 +199,10 @@ async function generateProductImage(imageFile) {
 
     debugLog('使用AI生成专业产品照...');
 
-    // 更激进压缩图片以适配Vercel严格限制
+    // 压缩图片以减少payload大小 - 恢复原始高质量设置
     const compressedImageBuffer = await sharp(imageFile.filepath)
-      .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 35 })
+      .resize(1000, 750, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 60 })
       .toBuffer();
 
     const imageBase64 = compressedImageBuffer.toString('base64');
